@@ -34,9 +34,14 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      // Generate JWT token
-      generateToken(newUser._id, res);
-      await newUser.save();
+      // Before CR:
+      // generateToken(newUser._id, res);
+      // await newUser.save();
+
+      // After CR
+      // Presist user first, then issue auth cookie
+      const savedUser = await newUser.save();
+      generateToken(savedUser._id, res);
 
       res.status(201).json({
         _id: newUser._id,
