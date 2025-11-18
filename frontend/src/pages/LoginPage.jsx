@@ -1,6 +1,6 @@
 function LoginPage() {
   
-  return <div>LoginPage</div>;
+  return <div>Login Page</div>;
 }
 
 export default LoginPage
