@@ -18,7 +18,8 @@ export const signup = async (req, res) => {
         .status(400)
         .json({ message: "Password must be at least 6 characters" });
     }
-    // Check if email valid: regex
+
+    // check if emailis valid: regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
@@ -27,9 +28,10 @@ export const signup = async (req, res) => {
     const user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: "Email already exists" });
 
-    // 123456 => hashedPassword
+    // 123456 => $dnjasdkasj_?dmsakmk
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+
     const newUser = new User({
       fullName,
       email,
@@ -37,12 +39,12 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      // Before CR:
+      // before CR:
       // generateToken(newUser._id, res);
       // await newUser.save();
 
-      // After CR
-      // Presist user first, then issue auth cookie
+      // after CR:
+      // Persist user first, then issue auth cookie
       const savedUser = await newUser.save();
       generateToken(savedUser._id, res);
 
@@ -53,7 +55,6 @@ export const signup = async (req, res) => {
         profilePic: newUser.profilePic,
       });
 
-      // Todo: send a welcome email to user
       try {
         await sendWelcomeEmail(
           savedUser.email,
@@ -82,12 +83,14 @@ export const login = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    // never tell the client which one is incorrect: password or email
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect)
       return res.status(400).json({ message: "Invalid credentials" });
 
     generateToken(user._id, res);
+
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
@@ -113,17 +116,17 @@ export const updateProfile = async (req, res) => {
 
     const userId = req.user._id;
 
-    const uploadResonse = await cloudinary.uploader.upload(profilePic);
+    const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-    const updateUser = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: updateProfile.secure_url },
+      { profilePic: uploadResponse.secure_url },
       { new: true }
     );
 
-    res.status(200).json(updateUser);
-  } catch (Error) {
-    console.log("Error in upadate profile:", error);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.log("Error in update profile:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
